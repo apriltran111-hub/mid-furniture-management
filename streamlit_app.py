@@ -17,7 +17,7 @@ COLUMNS = [
 # 2. KHỞI TẠO KẾT NỐI ĐỌC GOOGLE SHEETS
 database_df = pd.DataFrame(columns=COLUMNS)
 try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    conn = st.connection("my_gsheets", type=GSheetsConnection)
     database_df = conn.read(worksheet="database", ttl="0")
     database_df = database_df.dropna(how="all")
     for col in COLUMNS:
