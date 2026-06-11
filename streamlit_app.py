@@ -4,17 +4,31 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 import streamlit.components.v1 as components
+from streamlit_gsheets import GSheetsConnection
 
 # 1. CẤU HÌNH TRANG NGƯỜI DÙNG
 st.set_page_config(layout="wide", page_title="MID Furniture - Quản Lý Tiến Độ")
 
-# 2. KHỞI TẠO CƠ SỞ DỮ LIỆU TRỐNG (KHÔNG CHỨA THÔNG TIN TUẦN 23)
-if 'database' not in st.session_state:
-    columns = [
-        "project", "pic", "contractDate", "leadtime", "loadingDate", 
-        "status", "resolvedIssues", "newIssues", "week", "month", "year"
-    ]
-    st.session_state.database = pd.DataFrame(columns=columns)
+COLUMNS = [
+    "project", "pic", "contractDate", "leadtime", "loadingDate", 
+    "status", "resolvedIssues", "newIssues", "week", "month", "year"
+]
+
+# 2. KHỞI TẠO KẾT NỐI GOOGLE SHEETS
+# Sử dụng cơ chế kết nối qua Public URL an toàn để đọc dữ liệu vĩnh viễn
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    # Đọc dữ liệu từ sheet có tên là 'database'
+    database_df = conn.read(worksheet="database", ttl="0")
+    # Lọc bỏ dòng trống nếu có và ép chuẩn cấu trúc cột
+    database_df = database_df.dropna(how="all")
+    for col in COLUMNS:
+        if col not in database_df.columns:
+            database_df[col] = "-"
+    database_df = database_df[COLUMNS]
+except Exception as e:
+    # Nếu chưa cấu hình link hoặc lỗi kết nối, tạo DataFrame trống tạm thời
+    database_df = pd.DataFrame(columns=COLUMNS)
 
 # 3. HÀM TỰ ĐỘNG TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN
 def get_week_range_str(week_num, year):
@@ -53,7 +67,7 @@ with col_h1:
         <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
             <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
             <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
-            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System</p>
+            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System (Lưu trữ Google Sheets Cloud)</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -92,12 +106,22 @@ with col_h2:
                 
                 if new_rows:
                     df_new = pd.DataFrame(new_rows)
-                    if not st.session_state.database.empty:
-                        st.session_state.database = st.session_state.database[
-                            ~((st.session_state.database['week'] == target_week) & (st.session_state.database['year'] == target_year))
+                    # Loại bỏ tuần trùng
+                    if not database_df.empty:
+                        database_df = database_df[
+                            ~((database_df['week'] == target_week) & (database_df['year'] == target_year))
                         ]
-                    st.session_state.database = pd.concat([st.session_state.database, df_new], ignore_index=True)
-                    st.success(f"Nạp dữ liệu thành công!")
+                    # Gộp hàng mới
+                    database_df = pd.concat([database_df, df_new], ignore_index=True)
+                    
+                    # UPDATE LÊN GOOGLE SHEETS
+                    try:
+                        conn.update(worksheet="database", data=database_df)
+                        st.success(f"Nạp dữ liệu thành công! Đã đồng bộ lên đám mây Google Sheets.")
+                        st.rerun()
+                    except Exception as upload_error:
+                        st.error(f"File Word đọc tốt, nhưng không thể ghi lên Google Sheets. Lỗi: {str(upload_error)}")
+                        st.info("Vui lòng kiểm tra lại quyền chỉnh sửa (Editor) của mã kết nối.")
         except Exception as e:
             st.error(f"Lỗi khi đọc file Word: {str(e)}")
 
@@ -105,11 +129,17 @@ with col_h2:
 st.markdown("<br>", unsafe_allow_html=True)
 view_mode = st.radio("Chọn chế độ tổng hợp dữ liệu:", ["Xem báo cáo theo Tuần", "Tổng hợp báo cáo theo Tháng"], horizontal=True)
 
-db = st.session_state.database.copy()
+db = database_df.copy()
 
 if db.empty:
-    st.info("Hệ thống hiện tại chưa có dữ liệu. Vui lòng nạp file báo cáo Word (.docx) ở góc phải để bắt đầu làm việc.")
+    st.info("Hệ thống Cloud hiện tại chưa có dữ liệu lưu trữ, hoặc bạn chưa cấu hình link kết nối Google Sheets.")
+    st.markdown("⚠️ **Lưu ý:** Hãy cấu hình file `.streamlit/secrets.toml` hoặc thiết lập Advance Secrets trên Streamlit Share để liên kết cơ sở dữ liệu.")
 else:
+    # Chuyển kiểu dữ liệu số để lọc chính xác
+    db['year'] = pd.to_numeric(db['year'], errors='coerce').fillna(0).astype(int)
+    db['week'] = pd.to_numeric(db['week'], errors='coerce').fillna(0).astype(int)
+    db['month'] = pd.to_numeric(db['month'], errors='coerce').fillna(0).astype(int)
+
     available_years = sorted(db['year'].unique())
     col_f1, col_f2, col_f3, col_f4 = st.columns(4)
     
@@ -144,11 +174,11 @@ else:
         if selected_status != "Tất cả Trạng thái":
             db_filtered = db_filtered[db_filtered['status'] == selected_status]
 
-    st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng.</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng từ hệ thống đám mây.</p>", unsafe_allow_html=True)
 
-    # --- TẠO CHUỖI HTML BẢNG THUẦN KHÔNG PHỤ THUỘC MARKDOWN ST ---
+    # --- TẠO CHUỖI HTML BẢNG THUẦN ---
     html_body = ""
-    for idx, row in db_filtered.iterrows():
+    for idx, row in db_filtered.reset_index().iterrows():
         resolved_formatted = str(row['resolvedIssues']).replace('\n', '<br>')
         new_formatted = str(row['newIssues']).replace('\n', '<br>')
         badge_css = get_status_badge_style(row['status'])
@@ -169,7 +199,6 @@ else:
             </tr>
         """
 
-    # Đã sửa lỗi: Nhân đôi toàn bộ dấu ngoặc nhọn của CSS thành {{ }} để Python không bắt lỗi cú pháp
     full_table_html = f"""
     <!DOCTYPE html>
     <html>
@@ -218,9 +247,7 @@ else:
     </html>
     """
     
-    # Tính toán chiều cao linh hoạt dựa vào số lượng hàng đơn hàng đang có để bảng không bị cuộn dọc
     dynamic_height = 200 + (len(db_filtered) * 75)
     if dynamic_height < 500: dynamic_height = 500
     
-    # Ép trình duyệt render đồ họa HTML thuần túy qua iframe độc lập
     components.html(full_table_html, height=dynamic_height, scrolling=True)
