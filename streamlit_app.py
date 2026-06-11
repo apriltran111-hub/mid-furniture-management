@@ -4,7 +4,6 @@ import streamlit as st
 import pandas as pd
 from docx import Document
 import streamlit.components.v1 as components
-from streamlit_gsheets import GSheetsConnection
 
 # 1. CẤU HÌNH TRANG NGƯỜI DÙNG
 st.set_page_config(layout="wide", page_title="MID Furniture - Quản Lý Tiến Độ")
@@ -14,18 +13,25 @@ COLUMNS = [
     "status", "resolvedIssues", "newIssues", "week", "month", "year"
 ]
 
-# 2. KHỞI TẠO KẾT NỐI ĐỌC GOOGLE SHEETS
+# 2. ĐỌC GOOGLE SHEETS TRỰC TIẾP QUA PHƯƠNG THỨC EXPORT CSV (KHÔNG DÙNG THƯ VIỆN ĐỆM)
 database_df = pd.DataFrame(columns=COLUMNS)
 try:
-    conn = st.connection("my_gsheets", type=GSheetsConnection)
-    database_df = conn.read(worksheet="database", ttl="0")
+    # Lấy link từ Secrets để đảm bảo an toàn bảo mật
+    raw_url = st.secrets["connections"]["my_gsheets"]["spreadsheet"]
+    # Chuyển đổi link xem thông thường sang link xuất dữ liệu CSV trực tiếp
+    csv_url = raw_url.replace("/edit?usp=sharing", "/export?format=csv&gid=0")
+    
+    # Ép Pandas đọc dữ liệu trực tiếp từ Google Sheets, bỏ qua hoàn toàn cache hệ thống
+    database_df = pd.read_csv(csv_url)
     database_df = database_df.dropna(how="all")
+    
+    # Chuẩn hóa các cột
     for col in COLUMNS:
         if col not in database_df.columns:
             database_df[col] = "-"
     database_df = database_df[COLUMNS]
 except Exception as e:
-    st.warning("⚠️ Đang đợi cấu hình hoặc đồng bộ dữ liệu ban đầu từ Google Sheets...")
+    st.warning("⚠️ Hệ thống đang kết nối đến Google Sheets, vui lòng đợi trong giây lát...")
 
 # --- GIAO DIỆN CHÍNH ---
 
@@ -131,7 +137,7 @@ def get_status_badge_style(status):
     return styles.get(status, 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;')
 
 if db.empty:
-    st.info("Trang tính Google Sheets hiện chưa có dữ liệu hoặc không kết nối được. Vui lòng kiểm tra lại cấu hình link.")
+    st.info("Trang tính Google Sheets hiện chưa có dữ liệu hoặc đường link chưa chính xác. Vui lòng kiểm tra lại.")
 else:
     db['year'] = pd.to_numeric(db['year'], errors='coerce').fillna(0).astype(int)
     db['week'] = pd.to_numeric(db['week'], errors='coerce').fillna(0).astype(int)
@@ -196,7 +202,6 @@ else:
             </tr>
         """
 
-    # Tách biệt hoàn toàn phần CSS bằng việc loại bỏ f-string lồng nhau
     full_table_html = """
     <!DOCTYPE html>
     <html>
