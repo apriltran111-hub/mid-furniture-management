@@ -255,3 +255,10 @@ else:
     if dynamic_height < 500: dynamic_height = 500
     
     components.html(full_table_html, height=dynamic_height, scrolling=True)
+# --- DÒNG CREDIT PHÍA CUỐI TRANG (FOOTER) ---
+st.markdown("<br><hr>", unsafe_allow_html=True)
+st.markdown("""
+    <div style="text-align: center; color: #94a3b8; font-size: 13px; font-family: 'Segoe UI', Roboto, sans-serif; padding-bottom: 20px;">
+        System developed by April • © 2026 MID Furniture Report System
+    </div>
+""", unsafe_allow_html=True)
