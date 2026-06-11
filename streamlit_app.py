@@ -169,7 +169,7 @@ else:
             </tr>
         """
 
-    # Đóng gói toàn bộ mã HTML vào một iframe biệt lập để ép hiển thị đồ họa
+    # Đã sửa lỗi: Nhân đôi toàn bộ dấu ngoặc nhọn của CSS thành {{ }} để Python không bắt lỗi cú pháp
     full_table_html = f"""
     <!DOCTYPE html>
     <html>
@@ -210,4 +210,17 @@ else:
                 </tr>
             </thead>
             <tbody>
-                {html
+                {html_body}
+            </tbody>
+        </table>
+    </div>
+    </body>
+    </html>
+    """
+    
+    # Tính toán chiều cao linh hoạt dựa vào số lượng hàng đơn hàng đang có để bảng không bị cuộn dọc
+    dynamic_height = 200 + (len(db_filtered) * 75)
+    if dynamic_height < 500: dynamic_height = 500
+    
+    # Ép trình duyệt render đồ họa HTML thuần túy qua iframe độc lập
+    components.html(full_table_html, height=dynamic_height, scrolling=True)
