@@ -14,50 +14,18 @@ COLUMNS = [
     "status", "resolvedIssues", "newIssues", "week", "month", "year"
 ]
 
-# 2. KHỞI TẠO KẾT NỐI GOOGLE SHEETS
-# Sử dụng cơ chế kết nối qua Public URL an toàn để đọc dữ liệu vĩnh viễn
+# 2. KHỞI TẠO KẾT NỐI ĐỌC GOOGLE SHEETS
+database_df = pd.DataFrame(columns=COLUMNS)
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    # Đọc dữ liệu từ sheet có tên là 'database'
     database_df = conn.read(worksheet="database", ttl="0")
-    # Lọc bỏ dòng trống nếu có và ép chuẩn cấu trúc cột
     database_df = database_df.dropna(how="all")
     for col in COLUMNS:
         if col not in database_df.columns:
             database_df[col] = "-"
     database_df = database_df[COLUMNS]
 except Exception as e:
-    # Nếu chưa cấu hình link hoặc lỗi kết nối, tạo DataFrame trống tạm thời
-    database_df = pd.DataFrame(columns=COLUMNS)
-
-# 3. HÀM TỰ ĐỘNG TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN
-def get_week_range_str(week_num, year):
-    try:
-        first_day_of_year = datetime.date(year, 1, 1)
-        if first_day_of_year.weekday() > 3:
-            first_monday = first_day_of_year + datetime.timedelta(days=(7 - first_day_of_year.weekday()))
-        else:
-            first_monday = first_day_of_year - datetime.timedelta(days=first_day_of_year.weekday())
-        
-        start_date = first_monday + datetime.timedelta(weeks=int(week_num) - 1)
-        end_date = start_date + datetime.timedelta(days=6)
-        return f"{start_date.strftime('%d/%m')}-{end_date.strftime('%d/%m')}"
-    except:
-        return "01/01-07/01"
-
-# 4. HÀM TRẢ VỀ CLASS CSS CHO TỪNG TRẠNG THÁI
-def get_status_badge_style(status):
-    styles = {
-        'Complete': 'background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0;',
-        'Đang sản xuất': 'background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;',
-        'Chờ lệnh sản xuất': 'background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe;',
-        'Chờ hàng sang': 'background-color: #fffbeb; color: #b45309; border-color: #fde68a;',
-        'Chờ phản hồi Quality': 'background-color: #fff1f2; color: #be123c; border-color: #fecdd3;',
-        'Chờ lắp đặt': 'background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff;',
-        'Pending': 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;',
-        'Tiến hành bản vẽ': 'background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa;'
-    }
-    return styles.get(status, 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;')
+    st.warning("⚠️ Chưa quét được dữ liệu từ Google Sheets. Vui lòng đảm bảo bạn đã dán đoạn cấu hình Secrets ở Bước 4 và đặt tên trang tính là 'database'.")
 
 # --- GIAO DIỆN CHÍNH ---
 
@@ -67,7 +35,7 @@ with col_h1:
         <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
             <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
             <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
-            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System (Lưu trữ Google Sheets Cloud)</p>
+            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System (Đọc dữ liệu đám mây)</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -106,22 +74,28 @@ with col_h2:
                 
                 if new_rows:
                     df_new = pd.DataFrame(new_rows)
-                    # Loại bỏ tuần trùng
+                    # Loại bỏ dữ liệu tuần trùng trong bộ dữ liệu hiện tại
                     if not database_df.empty:
-                        database_df = database_df[
+                        updated_df = database_df[
                             ~((database_df['week'] == target_week) & (database_df['year'] == target_year))
                         ]
-                    # Gộp hàng mới
-                    database_df = pd.concat([database_df, df_new], ignore_index=True)
+                    else:
+                        updated_df = pd.DataFrame(columns=COLUMNS)
+                        
+                    # Gộp hàng mới vào chung
+                    final_df = pd.concat([updated_df, df_new], ignore_index=True)
                     
-                    # UPDATE LÊN GOOGLE SHEETS
-                    try:
-                        conn.update(worksheet="database", data=database_df)
-                        st.success(f"Nạp dữ liệu thành công! Đã đồng bộ lên đám mây Google Sheets.")
-                        st.rerun()
-                    except Exception as upload_error:
-                        st.error(f"File Word đọc tốt, nhưng không thể ghi lên Google Sheets. Lỗi: {str(upload_error)}")
-                        st.info("Vui lòng kiểm tra lại quyền chỉnh sửa (Editor) của mã kết nối.")
+                    st.success(f"Dịch file Word thành công! Đã gộp dữ liệu Tuần {target_week} vào kho tổng.")
+                    
+                    # Cung cấp nút tải về CSV để cập nhật thủ công lên Google Sheets
+                    csv_data = final_df.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button(
+                        label="💾 Tải file dữ liệu tổng hợp (.csv) để cập nhật Google Sheets",
+                        data=csv_data,
+                        file_name="database_cap_nhat.csv",
+                        mime="text/csv"
+                    )
+                    st.info("💡 Hướng dẫn: Tải file .csv trên về -> Mở Google Sheets của bạn ra -> Chọn Tệp -> Nhập -> Chọn Tải lên và chọn Ghi đè lên trang tính này.")
         except Exception as e:
             st.error(f"Lỗi khi đọc file Word: {str(e)}")
 
@@ -131,11 +105,37 @@ view_mode = st.radio("Chọn chế độ tổng hợp dữ liệu:", ["Xem báo 
 
 db = database_df.copy()
 
+# HÀM TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN
+def get_week_range_str(week_num, year):
+    try:
+        first_day_of_year = datetime.date(year, 1, 1)
+        if first_day_of_year.weekday() > 3:
+            first_monday = first_day_of_year + datetime.timedelta(days=(7 - first_day_of_year.weekday()))
+        else:
+            first_monday = first_day_of_year - datetime.timedelta(days=first_day_of_year.weekday())
+        start_date = first_monday + datetime.timedelta(weeks=int(week_num) - 1)
+        end_date = start_date + datetime.timedelta(days=6)
+        return f"{start_date.strftime('%d/%m')}-{end_date.strftime('%d/%m')}"
+    except:
+        return "01/01-07/01"
+
+# HÀM TRẢ VỀ CLASS CSS CHO TỪNG TRẠNG THÁI
+def get_status_badge_style(status):
+    styles = {
+        'Complete': 'background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0;',
+        'Đang sản xuất': 'background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;',
+        'Chờ lệnh sản xuất': 'background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe;',
+        'Chờ hàng sang': 'background-color: #fffbeb; color: #b45309; border-color: #fde68a;',
+        'Chờ phản hồi Quality': 'background-color: #fff1f2; color: #be123c; border-color: #fecdd3;',
+        'Chờ lắp đặt': 'background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff;',
+        'Pending': 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;',
+        'Tiến hành bản vẽ': 'background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa;'
+    }
+    return styles.get(status, 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;')
+
 if db.empty:
-    st.info("Hệ thống Cloud hiện tại chưa có dữ liệu lưu trữ, hoặc bạn chưa cấu hình link kết nối Google Sheets.")
-    st.markdown("⚠️ **Lưu ý:** Hãy cấu hình file `.streamlit/secrets.toml` hoặc thiết lập Advance Secrets trên Streamlit Share để liên kết cơ sở dữ liệu.")
+    st.info("Hệ thống Cloud hiện tại chưa có dữ liệu hiển thị. Hãy chuẩn bị file Google Sheets có một trang tính (Sheet) tên chính xác là 'database' với các tiêu đề cột tương ứng.")
 else:
-    # Chuyển kiểu dữ liệu số để lọc chính xác
     db['year'] = pd.to_numeric(db['year'], errors='coerce').fillna(0).astype(int)
     db['week'] = pd.to_numeric(db['week'], errors='coerce').fillna(0).astype(int)
     db['month'] = pd.to_numeric(db['month'], errors='coerce').fillna(0).astype(int)
@@ -174,7 +174,7 @@ else:
         if selected_status != "Tất cả Trạng thái":
             db_filtered = db_filtered[db_filtered['status'] == selected_status]
 
-    st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng từ hệ thống đám mây.</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng từ bộ nhớ đám mây.</p>", unsafe_allow_html=True)
 
     # --- TẠO CHUỖI HTML BẢNG THUẦN ---
     html_body = ""
