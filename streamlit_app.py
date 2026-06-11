@@ -13,15 +13,15 @@ COLUMNS = [
     "status", "resolvedIssues", "newIssues", "week", "month", "year"
 ]
 
-# 2. ĐỌC GOOGLE SHEETS TRỰC TIẾP QUA PHƯƠNG THỨC EXPORT CSV (KHÔNG DÙNG THƯ VIỆN ĐỆM)
+# 2. ĐỌC GOOGLE SHEETS TRỰC TIẾP QUA PHƯƠNG THỨC EXPORT CSV
 database_df = pd.DataFrame(columns=COLUMNS)
 try:
-    # Lấy link từ Secrets để đảm bảo an toàn bảo mật
+    # Lấy link từ Secrets
     raw_url = st.secrets["connections"]["my_gsheets"]["spreadsheet"]
-    # Chuyển đổi link xem thông thường sang link xuất dữ liệu CSV trực tiếp
+    # Chuyển đổi sang link xuất CSV trực tiếp
     csv_url = raw_url.replace("/edit?usp=sharing", "/export?format=csv&gid=0")
     
-    # Ép Pandas đọc dữ liệu trực tiếp từ Google Sheets, bỏ qua hoàn toàn cache hệ thống
+    # Đọc dữ liệu
     database_df = pd.read_csv(csv_url)
     database_df = database_df.dropna(how="all")
     
@@ -37,11 +37,12 @@ except Exception as e:
 
 col_h1, col_h2 = st.columns([2, 1])
 with col_h1:
+    # ĐIỀU CHỈNH Ô ĐỎ 1
     st.markdown("""
         <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
             <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
-            <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
-            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System (Cloud Database)</p>
+            <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
+            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture – Report System</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -202,6 +203,7 @@ else:
             </tr>
         """
 
+    # ĐIỀU CHỈNH Ô ĐỎ 2: LOẠI BỎ LOGO PHỤ TRONG BẢNG
     full_table_html = """
     <!DOCTYPE html>
     <html>
@@ -220,8 +222,6 @@ else:
                 <h2 style="font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.05em;">Báo Cáo Tiến Độ Đơn Hàng</h2>
                 <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 14px; color: #64748b; font-weight: 600;">
                     <span style="background-color: #1e1b4b; color: white; padding: 2px 12px; border-radius: 6px; font-size: 12px; letter-spacing: 0.05em;">""" + header_title + """</span>
-                    <span>•</span>
-                    <span>MID Furniture System</span>
                 </div>
             </div>
             <div style="text-align: right;">
