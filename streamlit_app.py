@@ -3,39 +3,10 @@ import re
 import streamlit as st
 import pandas as pd
 from docx import Document
+import streamlit.components.v1 as components
 
-# 1. CẤU HÌNH TRANG & GIỮ NGUYÊN GIAO DIỆN GỐC (TAILWIND / INTER FONT)
+# 1. CẤU HÌNH TRANG NGƯỜI DÙNG
 st.set_page_config(layout="wide", page_title="MID Furniture - Quản Lý Tiến Độ")
-
-# Inject CSS để giữ nguyên 100% giao diện, bảng màu Slate/Indigo/Amber và hiệu ứng bảng từ HTML gốc
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
-    
-    * { font-family: 'Inter', sans-serif; }
-    .report-title { font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; }
-    .badge { padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid; display: inline-block; }
-    
-    /* Màu sắc trạng thái chuẩn hóa theo file thiết kế gốc */
-    .status-complete { background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
-    .status-sx { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    .status-cho-sx { background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
-    .status-sang { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
-    .status-quality { background-color: #fff1f2; color: #be123c; border-color: #fecdd3; }
-    .status-lapdat { background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
-    .status-pending { background-color: #f8fafc; color: #334155; border-color: #e2e8f0; }
-    .status-banve { background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa; }
-    
-    /* Định dạng cấu trúc Table chuẩn */
-    table.custom-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-    table.custom-table th { background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center;}
-    table.custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #334155; }
-    table.custom-table tr:nth-child(even) { background-color: #f8fafc; }
-    table.custom-table tr:nth-child(odd) { background-color: #ffffff; }
-    .project-name { font-weight: 700; color: #0f172a; font-size: 13px; }
-    .issue-new { background-color: rgba(254, 243, 199, 0.2); }
-    </style>
-""", unsafe_allow_html=True)
 
 # 2. KHỞI TẠO CƠ SỞ DỮ LIỆU TRỐNG (KHÔNG CHỨA THÔNG TIN TUẦN 23)
 if 'database' not in st.session_state:
@@ -45,7 +16,7 @@ if 'database' not in st.session_state:
     ]
     st.session_state.database = pd.DataFrame(columns=columns)
 
-# 3. HÀM TỰ ĐỘNG TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN (TIÊU CHUẨN ISO WEEK)
+# 3. HÀM TỰ ĐỘNG TÍNH TOÁN NGÀY BẮT ĐẦU VÀ KẾT THÚC CỦA TUẦN
 def get_week_range_str(week_num, year):
     try:
         first_day_of_year = datetime.date(year, 1, 1)
@@ -60,30 +31,28 @@ def get_week_range_str(week_num, year):
     except:
         return "01/01-07/01"
 
-# 4. HÀM ĐỔI MÀU BADGE TRẠNG THÁI THEO THIẾT KẾ GỐC
-def get_status_badge(status):
-    status_classes = {
-        'Complete': 'status-complete',
-        'Đang sản xuất': 'status-sx',
-        'Chờ lệnh sản xuất': 'status-cho-sx',
-        'Chờ hàng sang': 'status-sang',
-        'Chờ phản hồi Quality': 'status-quality',
-        'Chờ lắp đặt': 'status-lapdat',
-        'Pending': 'status-pending',
-        'Tiến hành bản vẽ': 'status-banve'
+# 4. HÀM TRẢ VỀ CLASS CSS CHO TỪNG TRẠNG THÁI
+def get_status_badge_style(status):
+    styles = {
+        'Complete': 'background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0;',
+        'Đang sản xuất': 'background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;',
+        'Chờ lệnh sản xuất': 'background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe;',
+        'Chờ hàng sang': 'background-color: #fffbeb; color: #b45309; border-color: #fde68a;',
+        'Chờ phản hồi Quality': 'background-color: #fff1f2; color: #be123c; border-color: #fecdd3;',
+        'Chờ lắp đặt': 'background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff;',
+        'Pending': 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;',
+        'Tiến hành bản vẽ': 'background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa;'
     }
-    cls = status_classes.get(status, 'status-pending')
-    return f'<span class="badge {cls}">{status}</span>'
+    return styles.get(status, 'background-color: #f8fafc; color: #334155; border-color: #e2e8f0;')
 
 # --- GIAO DIỆN CHÍNH ---
 
-# Khối Tiêu đề Hệ thống & Khu vực Nạp File Word độc lập
 col_h1, col_h2 = st.columns([2, 1])
 with col_h1:
     st.markdown("""
-        <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);">
+        <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
             <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
-            <h1 class="report-title" style="font-size: 24px; margin-top: 8px; margin-bottom: 0px;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
+            <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
             <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture System</p>
         </div>
     """, unsafe_allow_html=True)
@@ -177,32 +146,45 @@ else:
 
     st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng.</p>", unsafe_allow_html=True)
 
-    # --- TẠO CHUỖI HTML BẢNG ---
+    # --- TẠO CHUỖI HTML BẢNG THUẦN KHÔNG PHỤ THUỘC MARKDOWN ST ---
     html_body = ""
-    for _, row in db_filtered.iterrows():
+    for idx, row in db_filtered.iterrows():
         resolved_formatted = str(row['resolvedIssues']).replace('\n', '<br>')
         new_formatted = str(row['newIssues']).replace('\n', '<br>')
-        badge_html = get_status_badge(row['status'])
+        badge_css = get_status_badge_style(row['status'])
+        row_bg = "#f8fafc" if idx % 2 != 0 else "#ffffff"
         
         html_body += f"""
-            <tr>
-                <td class="project-name" style="padding: 12px; border: 1px solid #e2e8f0; font-weight: 700; color: #0f172a; font-size: 13px;">{row['project']}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 600; color: #475569;">{row['pic']}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; color: #64748b;">{row['contractDate']}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; color: #64748b;">{row['leadtime']}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 600;">{row['loadingDate']}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center;">{badge_html}</td>
-                <td style="padding: 12px; border: 1px solid #e2e8f0; color: #475569;">{resolved_formatted}</td>
-                <td class="issue-new" style="padding: 12px; border: 1px solid #e2e8f0; color: #475569; background-color: rgba(254, 243, 199, 0.2);">{new_formatted}</td>
+            <tr style="background-color: {row_bg};">
+                <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: 700; color: #0f172a; font-size: 13px;">{row['project']}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 600; color: #475569; font-size: 12px;">{row['pic']}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">{row['contractDate']}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">{row['leadtime']}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center; font-weight: 600; font-size: 12px;">{row['loadingDate']}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                    <span style="padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid; display: inline-block; {badge_css}">{row['status']}</span>
+                </td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; color: #475569; font-size: 12px;">{resolved_formatted}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; color: #475569; font-size: 12px; background-color: rgba(254, 243, 199, 0.2);">{new_formatted}</td>
             </tr>
         """
 
-    # Ép toàn bộ khối bọc ngoài thành một chuỗi HTML thuần nhất, tránh lỗi Markdown bọc nhầm
+    # Đóng gói toàn bộ mã HTML vào một iframe biệt lập để ép hiển thị đồ họa
     full_table_html = f"""
-    <div style="background-color: white; padding: 40px; border-radius: 16px; border: 1px solid #e2e8f0; min-width: 1400px; overflow-x: auto;">
-        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 24px; margin-bottom: 32px;">
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; }}
+        </style>
+    </head>
+    <body>
+    <div style="background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; overflow-x: auto;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 24px; margin-bottom: 32px; align-items: center;">
             <div>
-                <h2 style="font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0;">Báo Cáo Tiến Độ Đơn Hàng</h2>
+                <h2 style="font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.05em;">Báo Cáo Tiến Độ Đơn Hàng</h2>
                 <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 14px; color: #64748b; font-weight: 600;">
                     <span style="background-color: #1e1b4b; color: white; padding: 2px 12px; border-radius: 6px; font-size: 12px; letter-spacing: 0.05em;">{header_title}</span>
                     <span>•</span>
@@ -214,10 +196,10 @@ else:
             </div>
         </div>
 
-        <table class="custom-table" style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
             <thead>
                 <tr>
-                    <th style="background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center; width: 12%;">Đơn hàng</th>
+                    <th style="background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: left; width: 12%;">Đơn hàng</th>
                     <th style="background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center; width: 7%;">Phụ trách</th>
                     <th style="background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center; width: 7%;">Ký HĐ</th>
                     <th style="background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px; border: 1px solid #cbd5e1; font-size: 11px; text-align: center; width: 7%;">Leadtime</th>
@@ -228,11 +210,4 @@ else:
                 </tr>
             </thead>
             <tbody>
-                {html_body}
-            </tbody>
-        </table>
-    </div>
-    """
-    
-    # Render ra giao diện trực quan 
-    st.markdown(full_table_html, unsafe_allow_html=True)
+                {html
