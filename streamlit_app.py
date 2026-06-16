@@ -22,7 +22,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. KẾT NỐI & TỰ ĐỘNG LẤY DỮ LIỆU TỪ GOOGLE SHEETS
+# 2. KẾT NỐI & TỰ ĐỘNG LẤY DỮ LIỆU TỪ GOOGLE SHEETS (GIỮ NGUYÊN)
 # ==========================================
 @st.cache_data(ttl=60) 
 def load_data_from_sheets():
@@ -133,16 +133,16 @@ with col_f4:
 st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng lấy trực tiếp theo thời gian thực từ Google Sheets.</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 6. XÂY DỰNG GIAO DIỆN BẢNG HTML CHUẨN ĐẸP
+# 6. XÂY DỰNG GIAO DIỆN BẢNG HTML CHUẨN ĐẸP (FIXED WIDTH TRÁNH LỖI TRÀN)
 # ==========================================
 html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; }}
-.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
+body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; width: 100%; overflow-x: hidden; }}
+.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; }}
 .table-header {{ border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }}
 .table-title-group {{ display: flex; align-items: center; gap: 16px; }}
 .table-title {{ font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.04em; }}
@@ -161,19 +161,17 @@ body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin:
     text-decoration: none; 
     border: 1px solid #cbd5e1; 
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    transition: background-color 0.2s;
 }}
-.management-btn:hover {{ background-color: #f8fafc; border-color: #94a3b8; }}
-table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
-table.custom-table th {{ background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px; border: 1px solid #cbd5e1; text-align: center; }}
-table.custom-table td {{ padding: 12px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; }}
+table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }}
+table.custom-table th {{ background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 6px; border: 1px solid #cbd5e1; text-align: center; }}
+table.custom-table td {{ padding: 12px 6px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; word-wrap: break-word; }}
 table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 .project-name {{ font-weight: 700; color: #0f172a; font-size: 13px; }}
 .issue-new {{ background-color: rgba(254, 243, 199, 0.25); }}
 .badge {{ padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid; display: inline-block; text-align: center; white-space: nowrap; }}
 .status-complete {{ background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }}
 .status-sx {{ background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }}
-.status-cho-sx { background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.status-cho-sx {{ background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }}
 .status-sang {{ background-color: #fffbeb; color: #b45309; border-color: #fde68a; }}
 .status-quality {{ background-color: #fff1f2; color: #be123c; border-color: #fecdd3; }}
 .status-lapdat {{ background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }}
