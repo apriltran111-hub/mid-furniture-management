@@ -15,7 +15,7 @@ LOGO_URL = "https://i.postimg.cc/d0ynyKDz/MID-FB.jpg"
 # Inject CSS để đồng bộ phông chữ toàn cục bên ngoài thành Inter
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 * { font-family: 'Inter', sans-serif; }
 .report-title { font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; }
 </style>
@@ -24,10 +24,9 @@ st.markdown("""
 # ==========================================
 # 2. KẾT NỐI & TỰ ĐỘNG LẤY DỮ LIỆU TỪ GOOGLE SHEETS
 # ==========================================
-@st.cache_data(ttl=60) # Tự động làm mới dữ liệu sau mỗi 60 giây nếu có thay đổi trên Sheet
+@st.cache_data(ttl=60) 
 def load_data_from_sheets():
     try:
-        # Khởi tạo kết nối Google Sheets dựa trên link cấu hình trong secrets.toml
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read()
         return df
@@ -37,7 +36,6 @@ def load_data_from_sheets():
 
 db_raw = load_data_from_sheets()
 
-# Trường hợp không kết nối được sheet hoặc sheet trống, hệ thống không sập mà hiển thị bảng trống
 if db_raw.empty:
     st.warning("Đang chờ cấu hình kết nối hoặc Database trên Google Sheets hiện đang trống.")
     db = pd.DataFrame(columns=["project", "pic", "contractDate", "leadtime", "loadingDate", "status", "resolvedIssues", "newIssues", "week", "month", "year"])
@@ -63,36 +61,30 @@ def get_week_range_str(week_num, year):
         return "01/06 - 07/06"
 
 # ==========================================
-# 4. GIAO DIỆN KHỐI TRÊN (TIÊU ĐỀ & DATA MANAGEMENT & LOGO)
+# 4. GIAO DIỆN KHỐI TRÊN (TIÊU ĐỀ & HÌNH ẢNH LOGO GỐC)
 # ==========================================
-col_title, col_actions = st.columns([2.5, 1.5])
+col_title, col_logo_zone = st.columns([3, 1])
 
 with col_title:
     st.markdown(f"""
         <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); height: 125px; display: flex; flex-direction: column; justify-content: center;">
-            <span style="align-self: flex-start; padding: 2px 10px; font-size: 11px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2;">Hệ thống quản trị dữ liệu đám mây</span>
-            <h1 class="report-title" style="font-size: 23px; margin-top: 6px; margin-bottom: 0px; line-height: 1.1;">HỆ THỐNG QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
-            <p style="font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 0px; line-height: 1.2;">MID Furniture System (Live Google Sheets Data)</p>
+            <span style="align-self: flex-start; padding: 2px 10px; font-size: 11px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2;">HỆ THỐNG BÁO CÁO</span>
+            <h1 class="report-title" style="font-size: 23px; margin-top: 6px; margin-bottom: 0px; line-height: 1.1;">QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
+            <p style="font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 0px; line-height: 1.2;">MID Furniture – Report System</p>
         </div>
     """, unsafe_allow_html=True)
 
-with col_actions:
-    col_btn, col_logo = st.columns([1.2, 1])
-    with col_btn:
-        st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-        # Nút bấm lấy link gốc cấu hình trong secrets để người dùng click mở tab mới chỉnh sửa Sheet
-        try:
-            sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
-        except:
-            sheet_url = "https://docs.google.com"
-        st.link_button("⚙️ Data Management", sheet_url, use_container_width=True)
-        
-    with col_logo:
-        st.markdown(f"""
-            <div style="background-color: white; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; height: 125px; box-sizing: border-box; padding: 10px;">
-                <img src="{LOGO_URL}" style="max-height: 90px; width: auto; border-radius: 8px; object-fit: contain;" alt="MID Logo">
-            </div>
-        """, unsafe_allow_html=True)
+with col_logo_zone:
+    st.markdown(f"""
+        <div style="display: flex; align-items: center; justify-content: flex-end; height: 125px; box-sizing: border-box; padding-right: 10px;">
+            <img src="{LOGO_URL}" style="max-height: 105px; width: auto; object-fit: contain;" alt="MID Logo">
+        </div>
+    """, unsafe_allow_html=True)
+
+try:
+    sheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+except:
+    sheet_url = "https://docs.google.com"
 
 # Chế độ xem đồng bộ dữ liệu
 st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
@@ -101,7 +93,6 @@ view_mode = st.radio("Chọn chế độ tổng hợp dữ liệu:", ["Xem báo 
 # ==========================================
 # 5. KHU VỰC BỘ LỌC THỜI GIAN VÀ PHÂN LOẠI
 # ==========================================
-# Chuẩn hóa dữ liệu số thời gian từ Google Sheets
 db['year'] = pd.to_numeric(db['year'], errors='coerce').fillna(datetime.date.today().year).astype(int)
 db['week'] = pd.to_numeric(db['week'], errors='coerce').fillna(1).astype(int)
 db['month'] = pd.to_numeric(db['month'], errors='coerce').fillna(1).astype(int)
@@ -151,13 +142,29 @@ html_content = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; }}
-.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
+.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }}
 .table-header {{ border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }}
 .table-title-group {{ display: flex; align-items: center; gap: 16px; }}
 .table-title {{ font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.04em; }}
 .table-badge {{ background-color: #1e1b4b; color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }}
-.brand-title {{ font-size: 22px; font-weight: 900; color: #172554; letter-spacing: -0.05em; }}
-table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+
+.management-btn {{ 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+    background-color: #ffffff; 
+    color: #334155; 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    font-size: 13px; 
+    font-weight: 500; 
+    text-decoration: none; 
+    border: 1px solid #cbd5e1; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: background-color 0.2s;
+}}
+.management-btn:hover {{ background-color: #f8fafc; border-color: #94a3b8; }}
+table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }}
 table.custom-table th {{ background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px; border: 1px solid #cbd5e1; text-align: center; }}
 table.custom-table td {{ padding: 12px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; }}
 table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
@@ -172,6 +179,17 @@ table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 .status-lapdat {{ background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }}
 .status-pending {{ background-color: #f8fafc; color: #334155; border-color: #e2e8f0; }}
 .status-banve {{ background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa; }}
+
+/* Thêm định dạng CSS chuyên nghiệp cho dòng credit cuối trang */
+.credit-footer {{
+    position: absolute;
+    bottom: 20px;
+    right: 30px;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}}
 </style>
 </head>
 <body>
@@ -180,9 +198,12 @@ table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
         <div class="table-title-group">
             <h2 class="table-title">Báo Cáo Tiến Độ Đơn Hàng</h2>
             <span class="table-badge">{header_title}</span>
-            <span style="color:#64748b; font-weight:600;">• Live Database</span>
         </div>
-        <div class="brand-title">MID FURNITURE</div>
+        <div>
+            <a href="{sheet_url}" target="_blank" class="management-btn">
+                <span>⚙️ Data Management</span>
+            </a>
+        </div>
     </div>
     <table class="custom-table">
         <thead>
@@ -209,7 +230,6 @@ status_map = {
 
 if not db_filtered.empty:
     for _, row in db_filtered.iterrows():
-        # Đảm bảo xử lý ký tự xuống dòng từ ô dữ liệu Google Sheet lên bảng HTML chuẩn
         resolved_txt = str(row.get('resolvedIssues', '-')).replace('\n', '<br>').replace('nan', '-')
         new_txt = str(row.get('newIssues', '-')).replace('\n', '<br>').replace('nan', '-')
         st_label = str(row.get('status', 'Pending')).strip()
@@ -236,15 +256,17 @@ else:
             </tr>
     """
 
+# Tích hợp dòng credit bản quyền của người phát triển ứng dụng vào cuối block chứa bảng
 html_content += """
         </tbody>
     </table>
+    <div class="credit-footer">System developed by April &copy; 2026 MID Furniture Report System</div>
 </div>
 </body>
 </html>
 """
 
 # ==========================================
-# 7. RENDER BẢNG HTML CHUẨN KHÔNG LỖI TEXT THÔ
+# 7. RENDER BẢNG HTML CHUẨN RA GIAO DIỆN WEB
 # ==========================================
-components.html(html_content, height=1000, scrolling=True)
+components.html(html_content, height=1050, scrolling=True)
