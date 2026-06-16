@@ -15,7 +15,7 @@ LOGO_URL = "https://i.postimg.cc/d0ynyKDz/MID-FB.jpg"
 # Inject CSS để đồng bộ phông chữ toàn cục bên ngoài thành Inter
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
 * { font-family: 'Inter', sans-serif; }
 .report-title { font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; }
 </style>
@@ -140,9 +140,9 @@ html_content = f"""
 <html>
 <head>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
 body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; }}
-.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }}
+.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
 .table-header {{ border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }}
 .table-title-group {{ display: flex; align-items: center; gap: 16px; }}
 .table-title {{ font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.04em; }}
@@ -164,7 +164,7 @@ body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin:
     transition: background-color 0.2s;
 }}
 .management-btn:hover {{ background-color: #f8fafc; border-color: #94a3b8; }}
-table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }}
+table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
 table.custom-table th {{ background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px; border: 1px solid #cbd5e1; text-align: center; }}
 table.custom-table td {{ padding: 12px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; }}
 table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
@@ -179,17 +179,6 @@ table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 .status-lapdat {{ background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }}
 .status-pending {{ background-color: #f8fafc; color: #334155; border-color: #e2e8f0; }}
 .status-banve {{ background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa; }}
-
-/* Thêm định dạng CSS chuyên nghiệp cho dòng credit cuối trang */
-.credit-footer {{
-    position: absolute;
-    bottom: 20px;
-    right: 30px;
-    font-size: 11px;
-    color: #94a3b8;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-}}
 </style>
 </head>
 <body>
@@ -256,11 +245,9 @@ else:
             </tr>
     """
 
-# Tích hợp dòng credit bản quyền của người phát triển ứng dụng vào cuối block chứa bảng
 html_content += """
         </tbody>
     </table>
-    <div class="credit-footer">System developed by April &copy; 2026 MID Furniture Report System</div>
 </div>
 </body>
 </html>
@@ -269,4 +256,13 @@ html_content += """
 # ==========================================
 # 7. RENDER BẢNG HTML CHUẨN RA GIAO DIỆN WEB
 # ==========================================
-components.html(html_content, height=1050, scrolling=True)
+components.html(html_content, height=1000, scrolling=True)
+
+# ==========================================
+# 8. DÒNG CREDIT ĐƯỢC ĐƯA VỀ CUỐI TRANG WEB CHÍNH XÁC
+# ==========================================
+st.markdown("""
+<div style="text-align: right; font-size: 11px; color: #94a3b8; font-weight: 500; letter-spacing: 0.02em; padding-top: 20px; padding-bottom: 10px; padding-right: 10px;">
+    System developed by April &copy; 2026 MID Furniture Report System
+</div>
+""", unsafe_allow_html=True)
