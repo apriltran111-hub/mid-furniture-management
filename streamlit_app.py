@@ -8,7 +8,7 @@ from docx import Document
 # 1. CẤU HÌNH TRANG & GIỮ NGUYÊN GIAO DIỆN (TAILWIND/INTER FONT)
 st.set_page_config(layout="wide", page_title="MID Furniture - Quản Lý Tiến Độ")
 
-# Inject CSS để đồng bộ giao diện như thiết kế
+# Inject CSS để đồng bộ giao diện như file HTML gốc
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
@@ -64,16 +64,22 @@ if 'database' not in st.session_state:
     ]
     st.session_state.database = pd.DataFrame(initial_data)
 
-# 3. HÀM TÍNH NGÀY ĐẦU VÀ CUỐI CỦA TUẦN (ISO WEEK)
+# 3. SỬA LỖI TẠI ĐÂY: Ép kiểu int chủ động cho week_num và year để không bị sập ứng dụng
 def get_week_range_str(week_num, year):
-    first_day_of_year = datetime.date(year, 1, 1)
-    if first_day_of_year.weekday() > 3:
-        first_monday = first_day_of_year + datetime.timedelta(days=(7 - first_day_of_year.weekday()))
-    else:
-        first_monday = first_day_of_year - datetime.timedelta(days=first_day_of_year.weekday())
-    start_date = first_monday + datetime.timedelta(weeks=week_num - 1)
-    end_date = start_date + datetime.timedelta(days=6)
-    return f"{start_date.strftime('%d/%m')}-{end_date.strftime('%d/%m')}"
+    try:
+        w = int(week_num)
+        y = int(year)
+        first_day_of_year = datetime.date(y, 1, 1)
+        if first_day_of_year.weekday() > 3:
+            first_monday = first_day_of_year + datetime.timedelta(days=(7 - first_day_of_year.weekday()))
+        else:
+            first_monday = first_day_of_year - datetime.timedelta(days=first_day_of_year.weekday())
+
+        start_date = first_monday + datetime.timedelta(weeks=w - 1)
+        end_date = start_date + datetime.timedelta(days=6)
+        return f"{start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')}"
+    except Exception as e:
+        return "01/01 - 07/01"
 
 def get_status_badge(status):
     status_classes = {
@@ -91,14 +97,13 @@ def get_status_badge(status):
 
 # --- GIAO DIỆN CHÍNH ---
 
-# Link logo Postimages chuẩn cố định vĩnh viễn của bạn
+# Link logo Postimages chuẩn cố định vĩnh viễn
 LOGO_URL = "https://i.postimg.cc/d0ynyKDz/MID-FB.jpg"
 
-# HÀNG TIÊU ĐỀ ĐẦU TIÊN: Khối ô tím (Trái) và Logo công ty đặt vào vị trí ô đỏ 1 cũ (Phải) để cân đối chiều cao
+# HÀNG TIÊU ĐỀ ĐẦU TIÊN: Khối ô tím (Trái) và Logo công ty đặt vào vị trí cũ của ô đỏ 1 (Phải)
 col_title, col_logo_img = st.columns([3, 1])
 
 with col_title:
-    # KHỐI Ô TÍM: Tiêu đề hệ thống quản lý chữ lớn
     st.markdown(f"""
         <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); height: 120px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;">
             <span style="align-self: flex-start; padding: 2px 10px; font-size: 11px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.2;">Hệ thống báo cáo</span>
@@ -108,7 +113,6 @@ with col_title:
     """, unsafe_allow_html=True)
 
 with col_logo_img:
-    # VỊ TRÍ Ô ĐỎ 1 CŨ: Giờ đây chứa Logo hình ảnh thực tế, bo góc nhẹ, cân đối khít với ô tím bên cạnh
     st.markdown(f"""
         <div style="background-color: white; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; height: 120px; box-sizing: border-box; padding: 12px;">
             <img src="{LOGO_URL}" style="max-height: 96px; width: auto; border-radius: 8px; object-fit: contain;" alt="MID Logo">
@@ -116,7 +120,7 @@ with col_logo_img:
     """, unsafe_allow_html=True)
 
 
-# HÀNG THỨ HAI: Lựa chọn chế độ tổng hợp (Trái) và Di chuyển khu nạp file Word xuống dưới (Vị trí ô xanh)
+# HÀNG THỨ HAI: Lựa chọn chế độ tổng hợp (Trái) và File Uploader hạ cánh xuống vị trí ô xanh (Phải)
 st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 col_radio, col_upload_zone = st.columns([3, 1])
 
@@ -124,7 +128,6 @@ with col_radio:
     view_mode = st.radio("Chọn chế độ tổng hợp dữ liệu:", ["Xem báo cáo theo Tuần", "Tổng hợp báo cáo theo Tháng"], horizontal=True)
 
 with col_upload_zone:
-    # DI CHUYỂN VÀO VỊ TRÍ Ô XANH: Khu vực nạp báo cáo tuần mới bằng file Word gọn gàng
     uploaded_file = st.file_uploader("📥 Nạp báo cáo tuần mới (.docx)", type=["docx"], label_visibility="collapsed")
     if uploaded_file is not None:
         try:
@@ -160,8 +163,14 @@ with col_upload_zone:
         except Exception as e:
             st.error(f"Lỗi cấu trúc File Word: {str(e)}")
 
-# --- KHU VỰC BỘ LỌC THỜI GIAN THEO ĐÚNG LOGIC GỐC ---
+# --- KHU VỰC BỘ LỌC THỜI GIAN VỚI ÉP KIỂU AN TOÀN ---
 db = st.session_state.database.copy()
+
+# Bảo đảm các dữ liệu cột thời gian đều là dạng số nguyên
+db['year'] = pd.to_numeric(db['year'], errors='coerce').fillna(2026).astype(int)
+db['week'] = pd.to_numeric(db['week'], errors='coerce').fillna(1).astype(int)
+db['month'] = pd.to_numeric(db['month'], errors='coerce').fillna(1).astype(int)
+
 available_years = sorted(db['year'].unique())
 col_f1, col_f2, col_f3, col_f4 = st.columns(4)
 
@@ -181,16 +190,16 @@ else:
         available_months = sorted(db_filtered['month'].unique())
         selected_month = st.selectbox("Chọn Tháng", available_months, index=0)
         db_filtered = db_filtered[db_filtered['month'] == selected_month]
-    header_title = f"TỔNG HỢP TIẾN ĐỘ ĐƠN HÀNG - THÁNG {selected_month}/{selected_year}"
+    header_title = f"Tháng {selected_month}/{selected_year}"
 
 with col_f3:
-    all_pics = ["Tất cả Người phụ trách"] + list(db_filtered['pic'].unique())
+    all_pics = ["Tất cả Người phụ trách"] + sorted(list(db_filtered['pic'].dropna().unique()))
     selected_pic = st.selectbox("Lọc nhanh Người phụ trách:", all_pics)
     if selected_pic != "Tất cả Người phụ trách":
         db_filtered = db_filtered[db_filtered['pic'] == selected_pic]
 
 with col_f4:
-    all_status = ["Tất cả Trạng thái"] + list(db_filtered['status'].unique())
+    all_status = ["Tất cả Trạng thái"] + sorted(list(db_filtered['status'].dropna().unique()))
     selected_status = st.selectbox("Lọc nhanh Trạng thái:", all_status)
     if selected_status != "Tất cả Trạng thái":
         db_filtered = db_filtered[db_filtered['status'] == selected_status]
@@ -249,5 +258,4 @@ html_table += """
 </div>
 """
 
-# Render bảng HTML tùy chỉnh đã tối ưu hóa lên Streamlit công khai
 st.markdown(html_table, unsafe_allow_html=True)
