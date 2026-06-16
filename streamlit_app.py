@@ -140,7 +140,7 @@ html_content = f"""
 <html>
 <head>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; }}
 .table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
 .table-header {{ border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }}
@@ -173,7 +173,7 @@ table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 .badge {{ padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid; display: inline-block; text-align: center; white-space: nowrap; }}
 .status-complete {{ background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }}
 .status-sx {{ background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }}
-.status-cho-sx {{ background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }}
+.status-cho-sx { background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
 .status-sang {{ background-color: #fffbeb; color: #b45309; border-color: #fde68a; }}
 .status-quality {{ background-color: #fff1f2; color: #be123c; border-color: #fecdd3; }}
 .status-lapdat {{ background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }}
@@ -259,10 +259,10 @@ html_content += """
 components.html(html_content, height=1000, scrolling=True)
 
 # ==========================================
-# 8. DÒNG CREDIT ĐƯỢC ĐƯA VỀ CUỐI TRANG WEB CHÍNH XÁC
+# 8. DÒNG CREDIT ĐƯỢC CĂN GIỮA TUYỆT ĐỐI Ở CUỐI TRANG WEB
 # ==========================================
 st.markdown("""
-<div style="text-align: right; font-size: 11px; color: #94a3b8; font-weight: 500; letter-spacing: 0.02em; padding-top: 20px; padding-bottom: 10px; padding-right: 10px;">
+<div style="text-align: center; font-size: 11px; color: #94a3b8; font-weight: 500; letter-spacing: 0.02em; padding-top: 25px; padding-bottom: 15px;">
     System developed by April &copy; 2026 MID Furniture Report System
 </div>
 """, unsafe_allow_html=True)
