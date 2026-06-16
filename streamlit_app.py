@@ -12,12 +12,13 @@ COLUMNS = [
     "status", "resolvedIssues", "newIssues", "week", "month", "year"
 ]
 
-# 2. ĐỌC GOOGLE SHEETS TRỰC TIẾP QUA PHƯƠNG THỨC EXPORT CSV (KHÔNG CÒN LOGIC UPLOAD/EXPORT FILE)
+# 2. ĐỌC GOOGLE SHEETS TRỰC TIẾP QUA PHƯƠNG THỨC EXPORT CSV
 database_df = pd.DataFrame(columns=COLUMNS)
+raw_url = ""
 try:
     # Lấy link từ Secrets
     raw_url = st.secrets["connections"]["my_gsheets"]["spreadsheet"]
-    # Chuyển đổi sang link xuất CSV trực tiếp
+    # Chuyển đổi sang link xuất CSV trực tiếp để Pandas đọc ngầm
     csv_url = raw_url.replace("/edit?usp=sharing", "/export?format=csv&gid=0")
     
     # Đọc dữ liệu trực tiếp thời gian thực từ Google Sheets
@@ -34,14 +35,32 @@ except Exception as e:
 
 # --- GIAO DIỆN CHÍNH ---
 
-# Thiết kế lại khu vực tiêu đề (Đã lược bỏ cột chứa nút Upload Word cũ)
-st.markdown("""
-    <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
-        <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
-        <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
-        <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture – Report System</p>
-    </div>
-""", unsafe_allow_html=True)
+# Chia khu vực tiêu đề làm 2 cột: Cột trái chứa Title, Cột phải chứa nút truy cập Google Sheets
+col_title, col_btn = st.columns([3, 1])
+
+with col_title:
+    st.markdown("""
+        <div style="background-color: white; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); font-family: 'Segoe UI', Roboto, sans-serif;">
+            <span style="padding: 4px 12px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857; border-radius: 9999px; border: 1px solid #d1fae5; text-transform: uppercase; letter-spacing: 0.05em;">Hệ thống báo cáo</span>
+            <h1 style="font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; color: #0f172a; font-size: 24px; margin-top: 8px; margin-bottom: 0px;">QUẢN LÝ TIẾN ĐỘ ĐƠN HÀNG</h1>
+            <p style="font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 0px;">MID Furniture – Report System</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_btn:
+    # Tạo khoảng trống phía trên để nút bấm căn lề đẹp mắt với tiêu đề
+    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+    
+    # Tạo nút bấm dạng Link mở trực tiếp link gốc Google Sheets trong Secrets sang một tab mới
+    if raw_url:
+        st.link_button(
+            label="⚙️ Data Management", 
+            url=raw_url, 
+            use_container_width=True,
+            help="Bấm vào đây để mở trang quản lý Google Sheets cập nhật và chỉnh sửa dữ liệu"
+        )
+    else:
+        st.button("⚙️ Data Management (Chưa cấu hình link)", disabled=True, use_container_width=True)
 
 # --- KHU VỰC BỘ LỌC THỜI GIAN VÀ CHẾ ĐỘ TỔNG HỢP ---
 st.markdown("<br>", unsafe_allow_html=True)
@@ -141,7 +160,6 @@ else:
             </tr>
         """
 
-    # Giao diện bảng (Đã bỏ logo phụ 'MID Furniture System' ở ô đỏ 2)
     full_table_html = """
     <!DOCTYPE html>
     <html>
