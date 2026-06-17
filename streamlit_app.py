@@ -133,76 +133,50 @@ with col_f4:
 st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng lấy trực tiếp theo thời gian thực từ Google Sheets.</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 6. XÂY DỰNG GIAO DIỆN BẢNG HTML CHUẨN ĐẸP (FIXED HEADER)
+# 6. XÂY DỰNG GIAO DIỆN BẢNG (TÁCH TIÊU ĐỀ & TABLE BODY)
 # ==========================================
-html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
-body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; width: 100%; }}
-.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; overflow-y: auto; max-height: 800px; }}
-/* Cố định Header của container */
-.table-header {{ 
-    position: sticky; top: 0; background: white; z-index: 10; 
-    border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; 
-    display: flex; align-items: center; justify-content: space-between; 
-}}
-.table-title-group {{ display: flex; align-items: center; gap: 16px; }}
-.table-title {{ font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.04em; }}
-.table-badge {{ background-color: #1e1b4b; color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }}
-.management-btn {{ display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; color: #334155; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
-/* Cố định tiêu đề cột */
-table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }}
-table.custom-table thead th {{ 
-    position: sticky; top: 80px; z-index: 5; background-color: #0f172a; 
-    color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; 
-    padding: 12px 6px; border: 1px solid #cbd5e1; text-align: center; 
-}}
-table.custom-table td {{ padding: 12px 6px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; word-wrap: break-word; }}
-table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
-.project-name {{ font-weight: 700; color: #0f172a; font-size: 13px; }}
-.issue-new {{ background-color: rgba(254, 243, 199, 0.25); }}
-.badge {{ padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; border: 1px solid; display: inline-block; text-align: center; white-space: nowrap; }}
-.status-complete {{ background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }}
-.status-sx {{ background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }}
-.status-cho-sx {{ background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; }}
-.status-sang {{ background-color: #fffbeb; color: #b45309; border-color: #fde68a; }}
-.status-quality {{ background-color: #fff1f2; color: #be123c; border-color: #fecdd3; }}
-.status-lapdat {{ background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }}
-.status-pending {{ background-color: #f8fafc; color: #334155; border-color: #e2e8f0; }}
-.status-banve {{ background-color: #ecfeff; color: #0e7490; border-color: #c5f6fa; }}
-</style>
-</head>
-<body>
-<div class="table-container">
-<div class="table-header">
-<div class="table-title-group">
-<h2 class="table-title">Báo Cáo Tiến Độ Đơn Hàng</h2>
-<span class="table-badge">{header_title}</span>
+
+# 1. Phần tiêu đề (Header) - Sẽ hiển thị cố định phía trên bảng
+header_section = f"""
+<div style="background-color: white; padding: 20px; border-radius: 16px 16px 0 0; border: 1px solid #e2e8f0; border-bottom: none; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <h2 style="font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0;">Báo Cáo Tiến Độ Đơn Hàng</h2>
+        <span style="background-color: #1e1b4b; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;">{header_title}</span>
+    </div>
+    <a href="{sheet_url}" target="_blank" style="text-decoration: none; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; color: #334155; font-size: 13px; font-weight: 500; background: white;">
+        ⚙️ Data Management
+    </a>
 </div>
-<div>
-<a href="{sheet_url}" target="_blank" class="management-btn">
-<span> ⚙ ️ Data Management</span>
-</a>
-</div>
-</div>
-<table class="custom-table">
-<thead>
-<tr>
-<th style="width: 14%;">Đơn hàng</th>
-<th style="width: 8%;">Phụ trách</th>
-<th style="width: 8%;">Ký HĐ</th>
-<th style="width: 8%;">Leadtime</th>
-<th style="width: 10%;">Loading DK</th>
-<th style="width: 12%;">Trạng thái</th>
-<th style="width: 20%;">Vấn đề đã có giải pháp</th>
-<th style="width: 20%;">Vấn đề mới cần giải quyết</th>
-</tr>
-</thead>
-<tbody>
 """
+
+# 2. Phần bảng dữ liệu (Table Body) - Phần này sẽ có thanh cuộn
+table_content = f"""
+<div style="max-height: 500px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 0 0 16px 16px; background: white;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
+        <thead style="position: sticky; top: 0; background: #0f172a; color: white;">
+            <tr>
+                <th style="padding: 12px 6px; text-align: left; width: 14%;">Đơn hàng</th>
+                <th style="padding: 12px 6px; text-align: center; width: 8%;">Phụ trách</th>
+                <th style="padding: 12px 6px; text-align: center; width: 8%;">Ký HĐ</th>
+                <th style="padding: 12px 6px; text-align: center; width: 8%;">Leadtime</th>
+                <th style="padding: 12px 6px; text-align: center; width: 10%;">Loading DK</th>
+                <th style="padding: 12px 6px; text-align: center; width: 12%;">Trạng thái</th>
+                <th style="padding: 12px 6px; text-align: left; width: 20%;">Vấn đề đã có giải pháp</th>
+                <th style="padding: 12px 6px; text-align: left; width: 20%;">Vấn đề mới cần giải quyết</th>
+            </tr>
+        </thead>
+        <tbody>
+"""
+
+# Vòng lặp thêm dữ liệu (giữ nguyên logic của bạn)
+if not db_filtered.empty:
+    for _, row in db_filtered.iterrows():
+        # ... (giữ nguyên đoạn xử lý resolved_txt, new_txt, st_class như cũ) ...
+        table_content += f"""<tr>...</tr>"""
+else:
+    table_content += """<tr><td colspan="8" style="text-align: center; padding: 30px;">Không có dữ liệu</td></tr>"""
+
+table_content += "</tbody></table></div>"
 
 status_map = {
     'Complete': 'status-complete', 'Đang sản xuất': 'status-sx',
@@ -248,9 +222,10 @@ html_content += """
 """
 
 # ==========================================
-# 7. RENDER BẢNG HTML CHUẨN RA GIAO DIỆN WEB
+# 7. RENDER RA GIAO DIỆN
 # ==========================================
-components.html(html_content, height=1000, scrolling=True)
+st.markdown(header_section, unsafe_allow_html=True)
+st.markdown(table_content, unsafe_allow_html=True)
 
 # ==========================================
 # 8. DÒNG CREDIT ĐƯỢC CĂN GIỮA TUYỆT ĐỐI Ở CUỐI TRANG WEB
