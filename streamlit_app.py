@@ -133,7 +133,7 @@ with col_f4:
 st.markdown(f"<p style='font-size: 14px; color: #64748b; margin-top:10px;'>Đang hiển thị <b>{len(db_filtered)}</b> đơn hàng lấy trực tiếp theo thời gian thực từ Google Sheets.</p>", unsafe_allow_html=True)
 
 # ==========================================
-# 6. XÂY DỰNG GIAO DIỆN BẢNG HTML CHUẨN ĐẸP (FIXED WIDTH TRÁNH LỖI TRÀN)
+# 6. XÂY DỰNG GIAO DIỆN BẢNG HTML CHUẨN ĐẸP (FIXED HEADER)
 # ==========================================
 html_content = f"""
 <!DOCTYPE html>
@@ -141,29 +141,25 @@ html_content = f"""
 <head>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap');
-body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; width: 100%; overflow-x: hidden; }}
-.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; }}
-.table-header {{ border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }}
+body {{ font-family: 'Inter', sans-serif; background-color: transparent; margin: 0; padding: 0; width: 100%; }}
+.table-container {{ background-color: white; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; overflow-y: auto; max-height: 800px; }}
+/* Cố định Header của container */
+.table-header {{ 
+    position: sticky; top: 0; background: white; z-index: 10; 
+    border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; 
+    display: flex; align-items: center; justify-content: space-between; 
+}}
 .table-title-group {{ display: flex; align-items: center; gap: 16px; }}
 .table-title {{ font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; letter-spacing: -0.04em; }}
 .table-badge {{ background-color: #1e1b4b; color: white; padding: 6px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }}
-
-.management-btn {{ 
-    display: inline-flex; 
-    align-items: center; 
-    gap: 6px; 
-    background-color: #ffffff; 
-    color: #334155; 
-    padding: 8px 16px; 
-    border-radius: 8px; 
-    font-size: 13px; 
-    font-weight: 500; 
-    text-decoration: none; 
-    border: 1px solid #cbd5e1; 
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}}
+.management-btn {{ display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; color: #334155; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; text-decoration: none; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+/* Cố định tiêu đề cột */
 table.custom-table {{ width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }}
-table.custom-table th {{ background-color: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 6px; border: 1px solid #cbd5e1; text-align: center; }}
+table.custom-table thead th {{ 
+    position: sticky; top: 80px; z-index: 5; background-color: #0f172a; 
+    color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; 
+    padding: 12px 6px; border: 1px solid #cbd5e1; text-align: center; 
+}}
 table.custom-table td {{ padding: 12px 6px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; line-height: 1.5; word-wrap: break-word; }}
 table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 .project-name {{ font-weight: 700; color: #0f172a; font-size: 13px; }}
@@ -181,31 +177,31 @@ table.custom-table tr:nth-child(even) {{ background-color: #f8fafc; }}
 </head>
 <body>
 <div class="table-container">
-    <div class="table-header">
-        <div class="table-title-group">
-            <h2 class="table-title">Báo Cáo Tiến Độ Đơn Hàng</h2>
-            <span class="table-badge">{header_title}</span>
-        </div>
-        <div>
-            <a href="{sheet_url}" target="_blank" class="management-btn">
-                <span>⚙️ Data Management</span>
-            </a>
-        </div>
-    </div>
-    <table class="custom-table">
-        <thead>
-            <tr>
-                <th style="width: 14%; text-align: left;">Đơn hàng</th>
-                <th style="width: 8%;">Phụ trách</th>
-                <th style="width: 8%;">Ký HĐ</th>
-                <th style="width: 8%;">Leadtime</th>
-                <th style="width: 10%;">Loading DK</th>
-                <th style="width: 12%;">Trạng thái</th>
-                <th style="width: 20%; text-align: left;">Vấn đề đã có giải pháp</th>
-                <th style="width: 20%; text-align: left;">Vấn đề mới cần giải quyết</th>
-            </tr>
-        </thead>
-        <tbody>
+<div class="table-header">
+<div class="table-title-group">
+<h2 class="table-title">Báo Cáo Tiến Độ Đơn Hàng</h2>
+<span class="table-badge">{header_title}</span>
+</div>
+<div>
+<a href="{sheet_url}" target="_blank" class="management-btn">
+<span> ⚙ ️ Data Management</span>
+</a>
+</div>
+</div>
+<table class="custom-table">
+<thead>
+<tr>
+<th style="width: 14%;">Đơn hàng</th>
+<th style="width: 8%;">Phụ trách</th>
+<th style="width: 8%;">Ký HĐ</th>
+<th style="width: 8%;">Leadtime</th>
+<th style="width: 10%;">Loading DK</th>
+<th style="width: 12%;">Trạng thái</th>
+<th style="width: 20%;">Vấn đề đã có giải pháp</th>
+<th style="width: 20%;">Vấn đề mới cần giải quyết</th>
+</tr>
+</thead>
+<tbody>
 """
 
 status_map = {
