@@ -178,49 +178,6 @@ else:
 
 table_content += "</tbody></table></div>"
 
-status_map = {
-    'Complete': 'status-complete', 'Đang sản xuất': 'status-sx',
-    'Chờ lệnh sản xuất': 'status-cho-sx', 'Chờ hàng sang': 'status-sang',
-    'Chờ phản hồi Quality': 'status-quality', 'Chờ lắp đặt': 'status-lapdat',
-    'Pending': 'status-pending', 'Tiến hành bản vẽ': 'status-banve'
-}
-
-if not db_filtered.empty:
-    for _, row in db_filtered.iterrows():
-        resolved_txt = str(row.get('resolvedIssues', '-')).replace('\n', '<br>').replace('nan', '-')
-        new_txt = str(row.get('newIssues', '-')).replace('\n', '<br>').replace('nan', '-')
-        st_label = str(row.get('status', 'Pending')).strip()
-        st_class = status_map.get(st_label, 'status-pending')
-        
-        html_content += f"""
-                <tr>
-                    <td class="project-name">{row.get('project', '-')}</td>
-                    <td style="text-align: center; font-weight: 600;">{row.get('pic', '-')}</td>
-                    <td style="text-align: center; color: #64748b;">{row.get('contractDate', '-')}</td>
-                    <td style="text-align: center; color: #64748b;">{row.get('leadtime', '-')}</td>
-                    <td style="text-align: center; font-weight: 600;">{row.get('loadingDate', '-')}</td>
-                    <td style="text-align: center;"><span class="badge {st_class}">{st_label}</span></td>
-                    <td>{resolved_txt}</td>
-                    <td class="issue-new">{new_txt}</td>
-                </tr>
-        """
-else:
-    html_content += """
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">
-                    Không tìm thấy dữ liệu phù hợp với bộ lọc hiện tại.
-                </td>
-            </tr>
-    """
-
-html_content += """
-        </tbody>
-    </table>
-</div>
-</body>
-</html>
-"""
-
 # ==========================================
 # 7. RENDER RA GIAO DIỆN
 # ==========================================
